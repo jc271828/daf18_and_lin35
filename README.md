@@ -1,3 +1,3 @@
-# Chen2024
+# README
 
-includes raw data and code to reproduce all results in Chen 2024
+Includes raw data and code to reproduce all results in Chen 2024
