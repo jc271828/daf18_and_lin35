@@ -44,44 +44,40 @@ hypergeo <- function(target_genes, DE_genes, all_genes) {
 # heat map -----------------------------------------------------------------
 
 # create color palettes
-mypalette <- brewer.pal(7,"YlGnBu")
-morecols <- colorRampPalette(mypalette)
+morecols <- colorRampPalette(c("cornflowerblue",
+                               "black",
+                               "khaki1"))
 
 # load data
 anova_DEGs_woFed <-
-  read_xlsx("RNASeq_20200902_d18_d16_dbl_N2Starv_N2Fed_analysis_report.xlsx",
-            sheet = "glmLRT_wo_N2Fed",
+  read_xlsx("S1 Data.xlsx",
+            sheet = "glmQLFTest",
             col_names = TRUE) %>% 
   filter(FDR < 0.05)
 
 cpm <- 
-  read_xlsx("RNASeq_20200902_d18_d16_dbl_N2Starv_N2Fed_analysis_report.xlsx",
-            sheet = "CPM_removed_Samples12_13_24_25",
+  read_xlsx("S1 Data.xlsx",
+            sheet = "CPM",
             col_names = TRUE)
 
 # clean up data
 cpm_woFed <- filter(cpm, gene_id %in% anova_DEGs_woFed$gene_id)
 cpm_woFed <- cpm_woFed[, c(12:20, 25:27, 1)]
 
-AvgCPM_woFed <-
-  cbind(as.data.frame(rowMeans(cpm_woFed[, c(1:3)])),
-        as.data.frame(rowMeans(cpm_woFed[, c(4:6)])),
-        as.data.frame(rowMeans(cpm_woFed[, c(7:9)])),
-        as.data.frame(rowMeans(cpm_woFed[, c(10:12)])))
-
-rownames(AvgCPM_woFed) <- cpm_woFed$gene_id
-colnames(AvgCPM_woFed) <- c("daf-16",
-                            "daf-18",
-                            "daf-16; daf-18",
-                            "wildtype")
-logAvgCPM_woFed <- log2(AvgCPM_woFed)
-colnames(logAvgCPM_woFed) <- c("daf-16",
+logCPM_woFed <- log2(cpm_woFed[, 1:12] + 1)
+AvgLogCPM_woFed <-
+  cbind(as.data.frame(rowMeans(logCPM_woFed[, c(1:3)])),
+        as.data.frame(rowMeans(logCPM_woFed[, c(4:6)])),
+        as.data.frame(rowMeans(logCPM_woFed[, c(7:9)])),
+        as.data.frame(rowMeans(logCPM_woFed[, c(10:12)])))
+colnames(AvgLogCPM_woFed) <- c("daf-16",
                                "daf-18",
                                "daf-16; daf-18",
                                "wildtype")
+rownames(AvgLogCPM_woFed) <- cpm_woFed$gene_id
 
 # gene-level pearson correlation
-gene_cor_woFed <- cor(t(logAvgCPM_woFed), method = "pearson", use = "pairwise.complete.obs")
+gene_cor_woFed <- cor(t(AvgLogCPM_woFed), method = "pearson", use = "pairwise.complete.obs")
 gene_distance_woFed <- as.dist((1-gene_cor_woFed)/2)
 gene_dend_woFed <- 
   hclust(gene_distance_woFed, method = "complete") %>%
@@ -93,7 +89,7 @@ gene_dend_woFed <- color_branches(gene_dend_woFed, k = 5, col = rainbow_hcl)
 gene_dend_woFed <- color_labels(gene_dend_woFed, k = 5, col = rainbow_hcl)
 plot(gene_dend_woFed)
 
-Znorm_woFed <- t(scale(t(logAvgCPM_woFed), center = TRUE, scale = TRUE))
+Znorm_woFed <- t(scale(t(AvgLogCPM_woFed), center = TRUE, scale = TRUE))
 
 # for genes, before and after z-score transformation, correlation doesn't change, but it DOES change for conditions
 # condition-level pearson correlation
